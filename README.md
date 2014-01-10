@@ -1,0 +1,4 @@
+thecpa
+======
+
+The ConfigParser Alternative
