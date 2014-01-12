@@ -176,7 +176,3 @@ These are not really configuration formats, they are data description formats. Y
 ### XML
 
 Seriously?
-
-
-
-
