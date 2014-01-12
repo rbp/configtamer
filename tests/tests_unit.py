@@ -77,3 +77,18 @@ parrot: Polly
 wakeup_call: {parrot}, wake up! {parrot}!
         """)
         assert parsed.wakeup_call == 'Polly, wake up! Polly!'
+
+    def test_interpolate_key_before_assignment(self):
+        parsed = thecpa.parse("""
+wakeup_call: {parrot}, wake up! {parrot}!
+parrot: Polly
+        """)
+        assert parsed.wakeup_call == 'Polly, wake up! Polly!'
+
+    def test_interpolate_different_keys_into_same_value(self):
+        parsed = thecpa.parse("""
+parrot: Polly
+wakeup_call: {parrot} parrot, wake up! This is your {hour} o'clock alarm call!
+hour: 9
+        """)
+        assert parsed.wakeup_call == "Polly parrot, wake up! This is your 9 o'clock alarm call!"
