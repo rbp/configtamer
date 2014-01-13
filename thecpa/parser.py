@@ -84,7 +84,8 @@ def parse(config_string):
     try:
         parsed_config = grammar.parse(config_string)
     except parsimonious.exceptions.IncompleteParseError as exc:
-        raise SyntaxError("Invalid config file syntax.")
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        raise SyntaxError, "Invalid config file syntax: {}".format(exc_value), exc_traceback
 
     visitor = TheCPANodeVisitor()
     assignments = visitor.visit(parsed_config)
