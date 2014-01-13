@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+import parsimonious
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor
 
@@ -19,7 +20,8 @@ grammar = Grammar(
     assignment_op       = ":" / "="
     # This seems a little too permissive, but we'll get to that.
     value               = ~"[^\s](.*[^\s])?"
-    empty_line          = (whitespace_inline* newline) / whitespace_inline+
+    # This is not entirely correct. It's either whitespace* + newline, or whitespace+ + EOF.
+    empty_line          = (whitespace_inline* newline) / (whitespace_inline+ !key)
     whitespace_inline   = " " / "\t"
     newline             = "\n" / "\r\n" / "\r"
     whitespace          = whitespace_inline / newline
@@ -67,7 +69,11 @@ def parse(config_string):
     import re
     re_interpolation = re.compile(r'\{([^}]+)\}')
 
-    parsed_config = grammar.parse(config_string)
+    try:
+        parsed_config = grammar.parse(config_string)
+    except parsimonious.exceptions.IncompleteParseError as exc:
+        raise SyntaxError("Invalid config file syntax.")
+
     visitor = TheCPANodeVisitor()
     assignments = visitor.visit(parsed_config)
 

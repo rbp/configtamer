@@ -78,6 +78,10 @@ customer_again: I'm sorry, I have a cold.
         assert parsed.clerk == "what do you mean, miss?"
         assert parsed.customer_again == "I'm sorry, I have a cold."
 
+    def test_top_level_assignment_with_leading_whitespace_in_key(self):
+        self.assertRaises(SyntaxError, thecpa.parse, "    parrot: is no more")
+
+
 
 class TestInterpolation(unittest.TestCase):
     def test_simple_interpolation(self):
