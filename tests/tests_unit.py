@@ -132,3 +132,14 @@ dead:   \t  pining for the fjords
         assert parsed.shopkeeper == "It's pining for the fjords!"
         assert parsed.mr_praline == "pining for the fjords??"
 
+
+class TestSections(unittest.TestCase):
+    def test_section_with_one_assignment(self):
+        parsed = thecpa.parse("""
+parrot:
+    complaint: it is dead
+        """)
+        assert set(parsed) == set(["parrot"])
+        assert set(parsed.parrot) == set(["complaint"])
+        assert parsed.parrot.complaint == 'it is dead'
+        

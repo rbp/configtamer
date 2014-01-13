@@ -4,6 +4,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+import sys
+
 import parsimonious
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor
@@ -13,18 +15,24 @@ from .config import Config
 
 grammar = Grammar(
     r"""
-    config              = line*
-    line                = assignment / empty_line
-    assignment          = key whitespace_inline* assignment_op whitespace_inline* value whitespace?
-    key                 = ~"[a-z0-9][a-z0-9_]*"i
-    assignment_op       = ":" / "="
+    config               = block*
+    block                = section / assignment / empty_line
+    section              = section_header indented_assignment
+    section_header       = section_name whitespace_inline* ":" whitespace_inline* newline
+    section_name         = key
+    indented_assignment  = "    " assignment
+    assignment           = key whitespace_inline* assignment_op whitespace_inline* value whitespace?
+    key                  = ~"[a-z0-9][a-z0-9_]*"i
+    assignment_colon     = ":"
+    assignment_equals    = "="
+    assignment_op        = assignment_colon / assignment_equals
     # This seems a little too permissive, but we'll get to that.
-    value               = ~"[^\s](.*[^\s])?"
+    value                = ~"[^\s](.*[^\s])?"
     # This is not entirely correct. It's either whitespace* + newline, or whitespace+ + EOF.
-    empty_line          = (whitespace_inline* newline) / (whitespace_inline+ !key)
-    whitespace_inline   = " " / "\t"
-    newline             = "\n" / "\r\n" / "\r"
-    whitespace          = whitespace_inline / newline
+    empty_line           = (whitespace_inline* newline) / (whitespace_inline+ !key)
+    whitespace_inline    = " " / "\t"
+    newline              = "\n" / "\r\n" / "\r"
+    whitespace           = whitespace_inline / newline
     """)
 
 
@@ -35,12 +43,23 @@ class TheCPANodeVisitor(NodeVisitor):
         assignments = [c for c in visited_children if c is not None]
         return assignments
 
-    def visit_line(self, node, visited_children):
-        # "Children" is either a single assignment, or None (for an empty line)
+    def visit_block(self, node, visited_children):
+        # "children" can be either: a section; a single assignment; or None (for an empty line)
         if visited_children is not None:
             assert len(visited_children) == 1
             return visited_children[0]
         return None
+
+    def visit_section(self, node, visited_children):
+        section_name = visited_children[0]
+        assignments =  [c for c in visited_children[1] if c is not None]
+        section =  {'key': section_name,
+                    'value': assignments}
+        return section
+
+    def visit_section_header(self, node, visited_children):
+        section_name = visited_children[0]["key"]
+        return section_name
 
     def visit_assignment(self, node, visited_children):
         merged = dict(sum([c.items() for c in visited_children if c is not None], []))
@@ -62,13 +81,6 @@ class TheCPANodeVisitor(NodeVisitor):
 
 
 def parse(config_string):
-    config = Config()
-    items = {}
-    to_interpolate = {}
-
-    import re
-    re_interpolation = re.compile(r'\{([^}]+)\}')
-
     try:
         parsed_config = grammar.parse(config_string)
     except parsimonious.exceptions.IncompleteParseError as exc:
@@ -77,9 +89,25 @@ def parse(config_string):
     visitor = TheCPANodeVisitor()
     assignments = visitor.visit(parsed_config)
 
+    config = process_assignments(assignments)
+    return config
+
+
+def process_assignments(assignments):
+    items = {}
+    to_interpolate = {}
+
+    import re
+    re_interpolation = re.compile(r'\{([^}]+)\}')
+
     for assignment in assignments:
         key = assignment["key"]
         value = assignment["value"]
+
+        # FIXME: better way of detecting a section :)
+        if not isinstance(value, basestring):
+            items[key] = process_assignments(value)
+            continue
 
         if re_interpolation.search(value):
             to_interpolate[key] = value
@@ -90,7 +118,8 @@ def parse(config_string):
     for key, value in to_interpolate.items():
         value = re_interpolation.sub(lambda m: items[m.group(1)], value)
         items[key] = value
-    
+
+    config = Config()
     for key, value in items.items():
         config.__add_key_value__(key, value)
 
