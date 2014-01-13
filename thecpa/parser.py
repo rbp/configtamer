@@ -12,7 +12,8 @@ from .config import Config
 
 grammar = Grammar(
     r"""
-    config              = (assignment / empty_line)*
+    config              = line*
+    line                = assignment / empty_line
     assignment          = key whitespace_inline* assignment_op whitespace_inline* value whitespace?
     key                 = ~"[a-z0-9][a-z0-9_]*"i
     assignment_op       = ":" / "="
@@ -29,11 +30,15 @@ class TheCPANodeVisitor(NodeVisitor):
     def visit_config(self, node, visited_children):
         # By this point, we have a list of {key: "key", value: "value"} dicts
         # representing assignments (and "None" children representing whitespace)
-
-        # FIXME: c[0] is a kludge, because the parsed config seems to add a node
-        # between config and assignments, with expr_name == ""
-        assignments = [c[0] for c in visited_children if c is not None]
+        assignments = [c for c in visited_children if c is not None]
         return assignments
+
+    def visit_line(self, node, visited_children):
+        # "Children" is either a single assignment, or None (for an empty line)
+        if visited_children is not None:
+            assert len(visited_children) == 1
+            return visited_children[0]
+        return None
 
     def visit_assignment(self, node, visited_children):
         merged = dict(sum([c.items() for c in visited_children if c is not None], []))

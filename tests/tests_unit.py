@@ -61,6 +61,23 @@ customer_again:    I'm sorry, I have a cold.    \t\t
         assert parsed.clerk == "what do you mean, miss?"
         assert parsed.customer_again == "I'm sorry, I have a cold."
 
+    def test_assignments_with_interspersed_whitespace(self):
+        parsed = thecpa.parse("""
+
+customer: 'ello Miss
+    
+clerk: what do you mean, miss?
+\t
+
+customer_again: I'm sorry, I have a cold.
+\t  \t
+
+
+""")
+        assert parsed.customer == "'ello Miss"
+        assert parsed.clerk == "what do you mean, miss?"
+        assert parsed.customer_again == "I'm sorry, I have a cold."
+
 
 class TestInterpolation(unittest.TestCase):
     def test_simple_interpolation(self):
