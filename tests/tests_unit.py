@@ -113,3 +113,22 @@ wakeup_call: {parrot} parrot, wake up! This is your {hour} o'clock alarm call!
 hour: 9
         """)
         assert parsed.wakeup_call == "Polly parrot, wake up! This is your 9 o'clock alarm call!"
+
+    def test_interpolate_values_with_whitespace(self):
+        parsed = thecpa.parse("""
+shopkeeper: It's {dead}!
+Mr_Praline: {dead}??
+dead: pining for the fjords
+        """)
+        assert parsed.shopkeeper == "It's pining for the fjords!"
+        assert parsed.mr_praline == "pining for the fjords??"
+
+    def test_interpolate_values_with_leading_and_trailing_whitespace(self):
+        parsed = thecpa.parse("""
+shopkeeper: \t  It's {dead}!  
+Mr_Praline: {dead}??   \t
+dead:   \t  pining for the fjords
+        """)
+        assert parsed.shopkeeper == "It's pining for the fjords!"
+        assert parsed.mr_praline == "pining for the fjords??"
+
