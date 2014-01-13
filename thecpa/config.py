@@ -11,7 +11,7 @@ class Config(collections.Mapping):
     def __getattr__(self, attr):
         if attr.lower() in self.__dict__:
             return self.__dict__[attr.lower()]
-        raise AttributeError
+        raise AttributeError("'{}' object has no attribute '{}'".format(self.__class__.__name__, attr))
 
     # FIXME: this should probably go :)
     def __add_key_value__(self, key, value):
