@@ -160,7 +160,8 @@ I needed a name, I was looking for puns, Monty Python references and something I
 
 ConfigParser is not hierarchical. "Intrinsic defaults" are defined in code (as a dict passed into the ConfigParser object), instead of separately, as a specification.
 
-It also seems to have too many options.
+In ConfigParser you can't access options as attributes, and not even
+(in Python 2) as dict keys.
 
 
 ### ConfigObj
