@@ -19,6 +19,11 @@ class TestSimpleParser(unittest.TestCase):
         assert list(parsed) == []
         assert parsed.__dict__ == {}
 
+    def test_empty_lines(self):
+        parsed = thecpa.parse("\n\n\n")
+        assert list(parsed) == []
+        assert parsed.__dict__ == {}
+
     def test_single_key_value_pair(self):
         parsed = thecpa.parse("foo: bar")
         assert set(parsed) == set(["foo"])
@@ -82,7 +87,6 @@ customer_again: I'm sorry, I have a cold.
         self.assertRaises(SyntaxError, thecpa.parse, "    parrot: is no more")
 
 
-
 class TestInterpolation(unittest.TestCase):
     def test_simple_interpolation(self):
         parsed = thecpa.parse("""
@@ -142,4 +146,18 @@ parrot:
         assert set(parsed) == set(["parrot"])
         assert set(parsed.parrot) == set(["complaint"])
         assert parsed.parrot.complaint == 'it is dead'
-        
+
+
+class TestFlatten(unittest.TestCase):
+    def test_None(self):
+        assert thecpa.parser.flatten(None) == [None]
+    def test_empty_list(self):
+        assert thecpa.parser.flatten([]) == []
+    def test_list_of_empty_list(self):
+        assert thecpa.parser.flatten([[]]) == []
+    def test_list_of_None(self):
+        assert thecpa.parser.flatten([None]) == []
+    def test_list_single_element(self):
+        assert thecpa.parser.flatten(['foo']) == ['foo']
+    def test_list_of_list_of_single_element(self):
+        assert thecpa.parser.flatten([['foo']]) == ['foo']
