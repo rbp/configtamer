@@ -15,7 +15,7 @@ from .config import Config
 
 grammar = Grammar(
     r"""
-    config               = empty_lines? top_level? sections?
+    config               = empty_lines? top_level? sections? (newline trailing_empty_lines)?
 
     top_level            = (assignment newline lines) / assignment
     lines                = (line newline lines) / line
@@ -36,6 +36,7 @@ grammar = Grammar(
     # This seems a little too permissive, but we'll get to that.
     value                = ~"[^\s]([^\r\n]*[^\s])?"
     empty_lines          = (empty_line newline empty_lines) / (empty_line newline)
+    trailing_empty_lines = (empty_line newline empty_lines) / empty_line
     empty_line           = whitespace_inline*
     whiltespace_line     = whitespace_inline+
     whitespace_inline    = " " / "\t"
