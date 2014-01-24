@@ -30,18 +30,16 @@ grammar = Grammar(
 
     assignment           = key whitespace_inline* assignment_op whitespace_inline* value whitespace_inline*
     key                  = ~"[a-z0-9][a-z0-9_]*"i
+    # This seems a little too permissive, but we'll get to that.
+    value                = ~"[^\s]([^\r\n]*[^\s])?"
     assignment_colon     = ":"
     assignment_equals    = "="
     assignment_op        = assignment_colon / assignment_equals
-    # This seems a little too permissive, but we'll get to that.
-    value                = ~"[^\s]([^\r\n]*[^\s])?"
     empty_lines          = (empty_line newline empty_lines) / (empty_line newline)
     trailing_empty_lines = (empty_line newline empty_lines) / empty_line
     empty_line           = whitespace_inline*
-    whiltespace_line     = whitespace_inline+
     whitespace_inline    = " " / "\t"
     newline              = "\r\n" / "\n" / "\r"
-    whitespace           = whitespace_inline / newline
     """)
 
 
