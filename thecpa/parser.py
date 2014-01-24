@@ -21,11 +21,13 @@ grammar = Grammar(
     lines                = (line newline lines) / line
     line                 = assignment / empty_line
 
-    sections             = (section newline sections) / section
+    sections             = section
     section              = section_header newline indented_assignments
     section_header       = section_name whitespace_inline* assignment_colon whitespace_inline*
     section_name         = key
-    indented_assignments = (indented_assignment newline indented_assignments) / indented_assignment
+    indented_assignments = (indented_assignment newline indented_lines) / indented_assignment
+    indented_lines       = (indented_line newline indented_lines) / indented_line
+    indented_line        = indented_assignment / empty_line
     indented_assignment  = " "+ assignment
 
     assignment           = key whitespace_inline* assignment_op whitespace_inline* value whitespace_inline*
