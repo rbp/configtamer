@@ -58,48 +58,38 @@ def flatten(items):
 
 class TheCPANodeVisitor(NodeVisitor):
     def visit_config(self, node, visited_children):
-        # each of visited_children can be:
-        # - a list of {key: "key", value: "value"} dicts
-        #   representing assignments and sections (or None, representing empty matches)
-        # - "None", representing empty matches
+        # each of visited_children is a >=0 list of
+        # {key: "key", value: "value"} or
+        # {'name': "section_name", "assignments": [...]}
+        # dicts representing assignments and sections (or None, representing empty matches)
         assignments = flatten(visited_children)
         return assignments
 
-    def visit_top_level(self, node, visited_children):
-        # visited_children is a list of {key: "key", value: "value"} dicts
-        # representing assignments and sections
-        # (and "None" children representing whitespace)
-        assignments = visited_children
-        return assignments
-
-    def visit_lines(self, node, visited_children):
-        # visited_children is a list of {key: "key", value: "value"} dicts
-        # representing assignments and sections
-        # (and "None" children representing whitespace)
-        assignments = visited_children
-        return assignments
-
     def visit_line(self, node, visited_children):
-        # visited_children is a single-element list
-        # of a dict {key: "key", value: "value"} representing assignments
-        # (or "None" children representing an empty line)
+        # visited_children is a list with either a single element,
+        # a dict {key: "key", value: "value"} representing assignments,
+        # or an empty list representing an empty line.
         assert len(visited_children) == 1, "Expected only one child in a line: {}".format(visited_children)
         return visited_children
 
     def visit_assignment(self, node, visited_children):
+        # After flattening, visited_children are one dict with "key"
+        # and one with "value"
         merged = dict(sum([c.items() for c in
                            flatten(visited_children)], []))
         return merged
 
     def visit_section_header(self, node, visited_children):
-        """visited_children should be a of nodes including a {key: section_name} dict"""
+        # visited_children, flattened, should contain a single element,
+        # a {key: section_name} dict representing the section name
         dicts = flatten(visited_children)
         assert len(dicts) == 1, "Expected only one child on a section header: {}".format(dicts)
-        return {"section": dicts[0]["key"]}
+        section_name = dicts[0]["key"]
+        return {"section": section_name}
 
     def visit_section(self, node, visited_children):
         """visited_children is a list including one {section: name} dict
-        and 1 or more other dicts."""
+        and 1 or more other dicts representing assignments."""
         dicts = flatten(visited_children)
         section = {'assignments': []}
         for d in dicts:
@@ -115,29 +105,9 @@ class TheCPANodeVisitor(NodeVisitor):
     def visit_value(self, node, visited_children):
         return {'value': node.text}
 
-    def visit_empty_line(self, node, visited_children):
-        return visited_children
-        
-    def visit_assignment_colon(self, node, visited_children):
-        return visited_children
-
-    def visit_whitespace_inline(self, node, visited_children):
-        return visited_children
-
-    def visit_newline(self, node, visited_children):
-        return visited_children
-
-    # If we're not interested in this node, flatten it as much as possible
+    # If we're not interested in this node, just bubble it up.
     def generic_visit(self, node, visited_children):
         return visited_children
-
-    # If we're not interested in this node, we just bubble up non-None children,
-    # or None if this is a leaf.
-    def generic_visit(self, node, visited_children):
-        valuable_children = [c for c in visited_children if c is not None]
-        if valuable_children:
-            return valuable_children
-        return None
 
 
 def parse(config_string):
@@ -155,7 +125,7 @@ def parse(config_string):
 
 
 def process_config(config):
-    # Interpolate assignments
+    """Processes a parsed config tree. Returns a Config object."""
     interpolated = process_assignments(config)
     for section in [d for d in config if 'name' in d]:
         setattr(interpolated, section['name'], process_assignments(d['assignments']))
@@ -163,6 +133,7 @@ def process_config(config):
 
 
 def process_assignments(config):
+    """Handles interpolation of assignment values. Returns a Config object."""
     items = {}
     to_interpolate = {}
 
