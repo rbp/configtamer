@@ -91,6 +91,24 @@ class TheCPANodeVisitor(NodeVisitor):
                            flatten(visited_children)], []))
         return merged
 
+    def visit_section_header(self, node, visited_children):
+        """visited_children should be a of nodes including a {key: section_name} dict"""
+        dicts = flatten(visited_children)
+        assert len(dicts) == 1, "Expected only one child on a section header: {}".format(dicts)
+        return {"section": dicts[0]["key"]}
+
+    def visit_section(self, node, visited_children):
+        """visited_children is a list including one {section: name} dict
+        and 1 or more other dicts."""
+        dicts = flatten(visited_children)
+        section = {'assignments': []}
+        for d in dicts:
+            if 'section' in d:
+                section['name'] = d['section']
+            else:
+                section['assignments'].append(d)
+        return section
+
     def visit_key(self, node, visited_children):
         return {'key': node.text}
 
@@ -124,26 +142,38 @@ class TheCPANodeVisitor(NodeVisitor):
 
 def parse(config_string):
     try:
-        parsed_config = grammar.parse(config_string)
+        parsed_string = grammar.parse(config_string)
     except parsimonious.exceptions.IncompleteParseError as exc:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         raise SyntaxError, "Invalid config file syntax: {}".format(exc_value), exc_traceback
 
     visitor = TheCPANodeVisitor()
-    assignments = visitor.visit(parsed_config)
+    parsed_config = visitor.visit(parsed_string)
 
-    config = process_assignments(assignments)
+    config = process_config(parsed_config)
     return config
 
 
-def process_assignments(assignments):
+def process_config(config):
+    # Interpolate assignments
+    interpolated = process_assignments(config)
+    for section in [d for d in config if 'name' in d]:
+        setattr(interpolated, section['name'], process_assignments(d['assignments']))
+    return interpolated
+
+
+def process_assignments(config):
     items = {}
     to_interpolate = {}
 
     import re
     re_interpolation = re.compile(r'\{([^}]+)\}')
 
-    for assignment in assignments:
+    for item in config:
+        if 'name' in item:
+            # This is a section. Nothing to interpolate
+            continue
+        assignment = item
         key = assignment["key"]
         value = assignment["value"]
 

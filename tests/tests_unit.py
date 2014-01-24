@@ -147,6 +147,16 @@ parrot:
         assert set(parsed.parrot) == set(["complaint"])
         assert parsed.parrot.complaint == 'it is dead'
 
+    def test_section_with_two_assignments(self):
+        parsed = thecpa.parse("""
+parrot:
+    complaint: it is dead
+    hypothesis: it's pining
+        """)
+        assert set(parsed) == set(["parrot"])
+        assert set(parsed.parrot) == set(["complaint", "hypothesis"])
+        assert parsed.parrot.complaint == 'it is dead'
+
 
 class TestFlatten(unittest.TestCase):
     def test_None(self):
