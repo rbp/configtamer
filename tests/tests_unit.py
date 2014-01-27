@@ -279,6 +279,203 @@ slug:
                          "talks": "False",
                          "state": "Alive"}})
 
+    def test_two_sections_with_empty_lines(self):
+        self.try_parse("""
+
+parrot:
+ \t
+    Colour: blue
+
+
+    Talks: True
+    State: Dead
+
+  \t
+
+
+
+slug:
+
+
+    Colour: who knows?  \t
+\t
+    Talks: False
+
+    State: Alive
+    \t
+
+    
+""",
+                       {"parrot":
+                        {"colour": "blue",
+                         "talks": "True",
+                         "state": "Dead"},
+                        "slug":
+                        {"colour": "who knows?",
+                         "talks": "False",
+                         "state": "Alive"}})
+
+    def test_three_sections(self):
+        self.try_parse("""
+parrot:
+    Colour: blue
+    Talks: True
+    State: Dead
+
+slug:
+    Colour: who knows?
+    Talks: False
+    State: Alive
+
+shopkeeper:
+    Colour: white
+    Talks: A lot
+    State: Alive but confused
+""",
+                       {"parrot":
+                        {"colour": "blue",
+                         "talks": "True",
+                         "state": "Dead"},
+                        "slug":
+                        {"colour": "who knows?",
+                         "talks": "False",
+                         "state": "Alive"},
+                        "shopkeeper":
+                        {"colour": "white",
+                         "talks": "A lot",
+                         "state": "Alive but confused"}})
+
+    def test_several_top_level_several_sections(self):
+        self.try_parse("""
+Where: pet shop
+
+Customer: Mr. Praline
+Time: Lunch time
+
+parrot:
+    Colour: blue
+    Talks: True
+    State: Dead
+
+slug:
+    Colour: who knows?
+    Talks: False
+    State: Alive
+
+shopkeeper:
+    Colour: white
+    Talks: A lot
+    State: Alive but confused""",
+                       {'where': 'pet shop',
+                        'customer': 'Mr. Praline',
+                        'time': 'Lunch time',
+                        "parrot":
+                        {"colour": "blue",
+                         "talks": "True",
+                         "state": "Dead"},
+                        "slug":
+                        {"colour": "who knows?",
+                         "talks": "False",
+                         "state": "Alive"},
+                        "shopkeeper":
+                        {"colour": "white",
+                         "talks": "A lot",
+                         "state": "Alive but confused"}})
+
+    def test_top_level_after_section(self):
+        self.assertRaises(SyntaxError, thecpa.parse, """
+Where: pet shop
+parrot:
+    is: no more
+
+Customer: Mr. Praline""")
+
+
+class TestInterpolationInSection(TestParser):
+    def test_simple_interpolation(self):
+        self.try_parse("""
+problem:
+    pet: parrot
+    this_is: a dead {pet}
+        """,
+                       {'problem':
+                        {"pet": "parrot",
+                         "this_is": "a dead parrot"}})
+
+    def test_interpolate_same_key_twice(self):
+        self.try_parse("""
+try_and_wake_him_up:
+    parrot: Polly
+    wakeup_call: {parrot}, wake up! {parrot}!
+        """,
+                       {'try_and_wake_him_up':
+                        {'parrot': 'Polly',
+                         'wakeup_call': 'Polly, wake up! Polly!'}})
+
+    def test_interpolate_key_before_assignment(self):
+        self.try_parse("""
+try_and_wake_him_up:
+    wakeup_call: {parrot}, wake up! {parrot}!
+    parrot: Polly
+        """,
+                       {'try_and_wake_him_up':
+                        {'parrot': 'Polly',
+                         'wakeup_call': 'Polly, wake up! Polly!'}})
+
+    def test_interpolate_different_keys_into_same_value(self):
+        self.try_parse("""
+try_and_wake_him_up:
+    parrot: Polly
+    wakeup_call: {parrot} parrot, wake up! This is your {hour} o'clock alarm call!
+    hour: 9
+        """,
+                       {'try_and_wake_him_up':
+                        {'parrot': 'Polly',
+                         'wakeup_call': "Polly parrot, wake up! This is your 9 o'clock alarm call!",
+                         'hour': '9'}})
+
+    def test_interpolate_values_with_whitespace(self):
+        self.try_parse("""
+excuse:
+    shopkeeper: It's {dead}!
+    Mr_Praline: {dead}??
+    dead: pining for the fjords
+        """,
+                       {'excuse':
+                        {"shopkeeper": "It's pining for the fjords!",
+                         "mr_praline": "pining for the fjords??",
+                         "dead": "pining for the fjords"}})
+
+    def test_interpolate_values_with_leading_and_trailing_whitespace(self):
+        self.try_parse("""
+excuse:
+    shopkeeper: \t  It's {dead}!  
+    Mr_Praline: {dead}??   \t
+    dead:   \t  pining for the fjords
+        """,
+                       {'excuse':
+                        {"shopkeeper": "It's pining for the fjords!",
+                         "mr_praline": "pining for the fjords??",
+                         "dead": "pining for the fjords"}})
+
+    def test_interpolate_in_two_sections(self):
+        self.try_parse("""
+parrot:
+    Colour: blue
+    Breed: Norwegian {Colour}
+
+slug:
+    Colour: slimy brown
+    Breed: Gooey {Colour}
+    """,
+                       {'parrot':
+                        {'colour': 'blue',
+                         'breed': 'Norwegian blue'},
+                        'slug':
+                        {'colour': 'slimy brown',
+                         'breed': 'Gooey slimy brown'}})
+        
+
 
 class TestFlatten(unittest.TestCase):
     def test_None(self):
