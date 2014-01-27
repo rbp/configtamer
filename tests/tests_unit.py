@@ -260,6 +260,26 @@ parrot:
                          'hypothesis': "it's pining",
                          'retort': "it's not pining, it's passed on!"}})
 
+    def test_two_sections(self):
+        self.try_parse("""
+parrot:
+    Colour: blue
+    Talks: True
+    State: Dead
+slug:
+    Colour: who knows?
+    Talks: False
+    State: Alive""",
+                       {"parrot":
+                        {"colour": "blue",
+                         "talks": "True",
+                         "state": "Dead"},
+                        "slug":
+                        {"colour": "who knows?",
+                         "talks": "False",
+                         "state": "Alive"}})
+
+
 class TestFlatten(unittest.TestCase):
     def test_None(self):
         assert thecpa.parser.flatten(None) == [None]

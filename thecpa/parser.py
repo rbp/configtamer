@@ -21,7 +21,7 @@ grammar = Grammar(
     lines                = (line newline lines) / line
     line                 = assignment / empty_line
 
-    sections             = (section newline sections) / section
+    sections             = (section sections) / section
     section              = section_header newline empty_lines? indented_assignments
     section_header       = section_name whitespace_inline* assignment_colon whitespace_inline*
     section_name         = key
@@ -128,7 +128,7 @@ def process_config(config):
     """Processes a parsed config tree. Returns a Config object."""
     interpolated = process_assignments(config)
     for section in [d for d in config if 'name' in d]:
-        setattr(interpolated, section['name'], process_assignments(d['assignments']))
+        setattr(interpolated, section['name'], process_assignments(section['assignments']))
     return interpolated
 
 
