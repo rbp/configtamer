@@ -8,66 +8,82 @@ import unittest
 import thecpa
 
 
-class TestSimpleParser(unittest.TestCase):
+class TestParser(unittest.TestCase):
+    def try_parse(self, config_string, expected):
+        """Parses config_string and checks it against the expected result.
+        Expected is a dict-of-dicts.
+        """
+        parsed = thecpa.parse(config_string)
+        self.validate_parsed_config(parsed, expected)
+
+    def validate_parsed_config(self, parsed, expected):
+        # All keys and attributes should match
+        # TODO: do this for every level of nested sections
+        assert set(parsed) == set(expected), "Expected: {}.\nGot: {}".format(set(expected), set(parsed))
+        assert parsed.__dict__ == expected, "Expected: {}.\nGot: {}".format(expected, parsed.__dict__)
+
+        for key in expected:
+            # Config values should be identically accessible as attributes or dict keys
+            assert parsed.get(key) == expected[key], "parsed[{}] != {}".format(key, expected[key])
+            assert getattr(parsed, key) == expected[key], "parsed.{} != {}".format(key, expected[key])
+
+            # Config keys should be case-insensitive
+            assert parsed.get(key) == parsed.get(key.swapcase()) == parsed.get(key.title()), \
+                   "Key {} should be case-insensitive!".format(key)
+            assert getattr(parsed, key) == getattr(parsed, key.swapcase()) == getattr(parsed, key.title()), \
+                                      "Attribute {} should be case-insensitive!".format(key)
+
+            if isinstance(expected[key], dict):
+                # Let's recurse into sections
+                self.validate_parsed_config(parsed[key], expected[key])
+
+
+class TestSimpleParser(TestParser):
     def test_empty_string(self):
-        parsed = thecpa.parse("")
-        assert list(parsed) == []
-        assert parsed.__dict__ == {}
+        self.try_parse("", {})
 
     def test_whitespace_only_string(self):
-        parsed = thecpa.parse(" \t\n")
-        assert list(parsed) == []
-        assert parsed.__dict__ == {}
+        self.try_parse(" \t\n", {})
 
     def test_empty_lines(self):
-        parsed = thecpa.parse("\n\n\n")
-        assert list(parsed) == []
-        assert parsed.__dict__ == {}
+        self.try_parse("\n\n\n", {})
 
     def test_single_key_value_pair(self):
-        parsed = thecpa.parse("foo: bar")
-        assert set(parsed) == set(["foo"])
-        assert parsed.__dict__ == {'foo': 'bar'}
-        assert parsed['foo'] == 'bar'
-        assert parsed.foo == 'bar'
+        self.try_parse("foo: bar",
+                       {'foo': 'bar'})
 
     def test_two_key_value_pairs(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot: dead
 slug: mute
-""")
-        assert set(parsed) == set(["parrot", "slug"])
-        assert parsed.__dict__ == {"parrot": "dead", "slug": "mute"}
-        assert parsed['parrot'] == parsed.parrot == 'dead'
-        assert parsed['slug'] == parsed.slug == 'mute'
+""",
+                       {"parrot": "dead", "slug": "mute"})
 
     def test_keys_are_case_insensitive(self):
-        parsed = thecpa.parse("Parrot: dead")
-        assert parsed.Parrot == "dead"
-        assert parsed.parrot == "dead"
+        self.try_parse("Parrot: dead", {"parrot": "dead"})
 
     def test_values_with_whitespace(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot: is no more
 it: has\tceased\tto\tbe
 it_has: expired\tand gone\tmeet its\tmaker
-""")
-        assert parsed.parrot == "is no more"
-        assert parsed.it == "\t".join(["has", "ceased", "to", "be"])
-        assert parsed.it_has == "expired\tand gone\tmeet its\tmaker"
+""",
+                       {"parrot": "is no more",
+                        "it": "has\tceased\tto\tbe",
+                        "it_has": "expired\tand gone\tmeet its\tmaker"})
 
     def test_values_with_leading_and_trailing_whitespace(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 customer: 'ello Miss    \t
 clerk:    what do you mean, miss?  \t
 customer_again:    I'm sorry, I have a cold.    \t\t
-""")
-        assert parsed.customer == "'ello Miss"
-        assert parsed.clerk == "what do you mean, miss?"
-        assert parsed.customer_again == "I'm sorry, I have a cold."
+""",
+                       {"customer": "'ello Miss",
+                        "clerk": "what do you mean, miss?",
+                        "customer_again": "I'm sorry, I have a cold."})
 
     def test_assignments_with_interspersed_whitespace(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 
 customer: 'ello Miss
     
@@ -78,110 +94,171 @@ customer_again: I'm sorry, I have a cold.
 \t  \t
 
 
-""")
-        assert parsed.customer == "'ello Miss"
-        assert parsed.clerk == "what do you mean, miss?"
-        assert parsed.customer_again == "I'm sorry, I have a cold."
+""",
+                       {"customer": "'ello Miss",
+                        "clerk": "what do you mean, miss?",
+                        "customer_again": "I'm sorry, I have a cold."})
 
     def test_top_level_assignment_with_leading_whitespace_in_key(self):
         self.assertRaises(SyntaxError, thecpa.parse, "    parrot: is no more")
 
 
-class TestInterpolation(unittest.TestCase):
+class TestInterpolation(TestParser):
     def test_simple_interpolation(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 pet: parrot
 this_is: a dead {pet}
-        """)
-        assert parsed.pet == "parrot"
-        assert parsed.this_is == "a dead parrot"
+        """,
+                       {"pet": "parrot",
+                        "this_is": "a dead parrot"})
 
     def test_interpolate_same_key_twice(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot: Polly
 wakeup_call: {parrot}, wake up! {parrot}!
-        """)
-        assert parsed.wakeup_call == 'Polly, wake up! Polly!'
+        """,
+                       {'parrot': 'Polly',
+                        'wakeup_call': 'Polly, wake up! Polly!'})
 
     def test_interpolate_key_before_assignment(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 wakeup_call: {parrot}, wake up! {parrot}!
 parrot: Polly
-        """)
-        assert parsed.wakeup_call == 'Polly, wake up! Polly!'
+        """,
+                       {'parrot': 'Polly',
+                        'wakeup_call': 'Polly, wake up! Polly!'})
 
     def test_interpolate_different_keys_into_same_value(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot: Polly
 wakeup_call: {parrot} parrot, wake up! This is your {hour} o'clock alarm call!
 hour: 9
-        """)
-        assert parsed.wakeup_call == "Polly parrot, wake up! This is your 9 o'clock alarm call!"
+        """,
+                       {'parrot': 'Polly',
+                        'wakeup_call': "Polly parrot, wake up! This is your 9 o'clock alarm call!",
+                        'hour': '9'})
 
     def test_interpolate_values_with_whitespace(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 shopkeeper: It's {dead}!
 Mr_Praline: {dead}??
 dead: pining for the fjords
-        """)
-        assert parsed.shopkeeper == "It's pining for the fjords!"
-        assert parsed.mr_praline == "pining for the fjords??"
+        """,
+                       {"shopkeeper": "It's pining for the fjords!",
+                        "mr_praline": "pining for the fjords??",
+                        "dead": "pining for the fjords"})
 
     def test_interpolate_values_with_leading_and_trailing_whitespace(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 shopkeeper: \t  It's {dead}!  
 Mr_Praline: {dead}??   \t
 dead:   \t  pining for the fjords
-        """)
-        assert parsed.shopkeeper == "It's pining for the fjords!"
-        assert parsed.mr_praline == "pining for the fjords??"
+        """,
+                       {"shopkeeper": "It's pining for the fjords!",
+                        "mr_praline": "pining for the fjords??",
+                        "dead": "pining for the fjords"})
 
 
-class TestSections(unittest.TestCase):
+class TestSections(TestParser):
     def test_section_with_one_assignment(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot:
     complaint: it is dead
-        """)
-        assert set(parsed) == set(["parrot"])
-        assert set(parsed.parrot) == set(["complaint"])
-        assert parsed.parrot.complaint == 'it is dead'
+        """,
+                       {'parrot':
+                        {'complaint': 'it is dead'}})
+        #assert set(parsed) == set(["parrot"])
+        #assert set(parsed.parrot) == set(["complaint"])
+        #assert parsed.parrot.complaint == 'it is dead'
 
     def test_section_with_two_assignments(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot:
     complaint: it is dead
     hypothesis: it's pining
-        """)
-        assert set(parsed) == set(["parrot"])
-        assert set(parsed.parrot) == set(["complaint", "hypothesis"])
-        assert parsed.parrot.complaint == 'it is dead'
+        """,
+                       {'parrot':
+                        {'complaint': 'it is dead',
+                         'hypothesis': "it's pining"}})
 
     def test_section_with_two_assignments_with_empty_line(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot:
     complaint: it is dead
 
     hypothesis: it's pining
-        """)
-        assert set(parsed) == set(["parrot"])
-        assert set(parsed.parrot) == set(["complaint", "hypothesis"])
-        assert parsed.parrot.complaint == 'it is dead'
+        """,
+                       {'parrot':
+                        {'complaint': 'it is dead',
+                         'hypothesis': "it's pining"}})
 
     def test_section_with_three_assignments_and_empty_lines(self):
-        parsed = thecpa.parse("""
+        self.try_parse("""
 parrot:
     complaint: it is dead
 
     hypothesis: it's pining
 
     retort: it's not pining, it's passed on!
-        """)
-        assert set(parsed) == set(["parrot"])
-        assert set(parsed.parrot) == set(["complaint", "hypothesis", "retort"])
-        assert parsed.parrot.complaint == 'it is dead'
-        assert parsed.parrot.retort == "it's not pining, it's passed on!"
+        """,
+                       {'parrot':
+                        {'complaint': 'it is dead',
+                         'hypothesis': "it's pining",
+                         'retort': "it's not pining, it's passed on!"}})
 
+
+class TestTopLevelAndSections(TestParser):
+    def test_one_top_level_assignment_one_section(self):
+        self.try_parse("""
+where: pet shop
+parrot:
+    complaint: it is dead
+        """,
+                       {"where": "pet shop",
+                        "parrot":
+                        {"complaint": "it is dead"}})
+
+    def test_several_top_level_one_section_with_several_assignments(self):
+        self.try_parse("""
+Where: pet shop
+Customer: Mr. Praline
+parrot:
+    complaint: it is dead
+    hypothesis: it's pining
+    retort: it's not pining, it's passed on!
+        """,
+                       {'where': 'pet shop',
+                        'customer': 'Mr. Praline',
+                        'parrot':
+                        {'complaint': 'it is dead',
+                         'hypothesis': "it's pining",
+                         'retort': "it's not pining, it's passed on!"}})
+
+    def test_several_top_level_one_section_with_several_assignments_and_empty_lines(self):
+        self.try_parse("""
+
+Where: pet shop
+
+     \t
+Customer: Mr. Praline
+
+  \t  
+
+parrot:
+
+    complaint: it is dead\t
+
+
+    hypothesis: it's pining
+    retort: it's not pining, it's passed on!
+
+   \t      """,
+                       {'where': 'pet shop',
+                        'customer': 'Mr. Praline',
+                        'parrot':
+                        {'complaint': 'it is dead',
+                         'hypothesis': "it's pining",
+                         'retort': "it's not pining, it's passed on!"}})
 
 class TestFlatten(unittest.TestCase):
     def test_None(self):
