@@ -21,8 +21,8 @@ grammar = Grammar(
     lines                = (line newline lines) / line
     line                 = assignment / empty_line
 
-    sections             = section
-    section              = section_header newline indented_assignments
+    sections             = (section newline sections) / section
+    section              = section_header newline empty_lines? indented_assignments
     section_header       = section_name whitespace_inline* assignment_colon whitespace_inline*
     section_name         = key
     indented_assignments = (indented_assignment newline indented_lines) / indented_assignment
