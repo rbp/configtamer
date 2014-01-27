@@ -13,6 +13,12 @@ class Config(collections.Mapping):
             return self.__dict__[attr.lower()]
         raise AttributeError("'{}' object has no attribute '{}'".format(self.__class__.__name__, attr))
 
+    def __repr__(self):
+        return self.__dict__.__str__()
+    # TODO: perhaps have __str__ return a config file-like representation
+    __str__ = __repr__
+        
+
     # FIXME: this should probably go :)
     def __add_key_value__(self, key, value):
         self.__dict__[key.lower()] = value
