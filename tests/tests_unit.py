@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import unittest
-import thecpa
+import configtamer
 
 
 class TestParser(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestParser(unittest.TestCase):
         """Parses config_string and checks it against the expected result.
         Expected is a dict-of-dicts.
         """
-        parsed = thecpa.parse(config_string)
+        parsed = configtamer.parse(config_string)
         self.validate_parsed_config(parsed, expected)
 
     def validate_parsed_config(self, parsed, expected):
@@ -101,7 +101,7 @@ customer_again: I'm sorry, I have a cold.
                         "customer_again": "I'm sorry, I have a cold."})
 
     def test_top_level_assignment_with_leading_whitespace_in_key(self):
-        self.assertRaises(SyntaxError, thecpa.parse, "    parrot: is no more")
+        self.assertRaises(SyntaxError, configtamer.parse, "    parrot: is no more")
 
 
 class TestInterpolation(TestParser):
@@ -384,7 +384,7 @@ shopkeeper:
                          "state": "Alive but confused"}})
 
     def test_top_level_after_section(self):
-        self.assertRaises(SyntaxError, thecpa.parse, """
+        self.assertRaises(SyntaxError, configtamer.parse, """
 Where: pet shop
 parrot:
     is: no more
@@ -480,14 +480,14 @@ slug:
 
 class TestFlatten(unittest.TestCase):
     def test_None(self):
-        assert thecpa.parser.flatten(None) == [None]
+        assert configtamer.parser.flatten(None) == [None]
     def test_empty_list(self):
-        assert thecpa.parser.flatten([]) == []
+        assert configtamer.parser.flatten([]) == []
     def test_list_of_empty_list(self):
-        assert thecpa.parser.flatten([[]]) == []
+        assert configtamer.parser.flatten([[]]) == []
     def test_list_of_None(self):
-        assert thecpa.parser.flatten([None]) == []
+        assert configtamer.parser.flatten([None]) == []
     def test_list_single_element(self):
-        assert thecpa.parser.flatten(['foo']) == ['foo']
+        assert configtamer.parser.flatten(['foo']) == ['foo']
     def test_list_of_list_of_single_element(self):
-        assert thecpa.parser.flatten([['foo']]) == ['foo']
+        assert configtamer.parser.flatten([['foo']]) == ['foo']

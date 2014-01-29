@@ -57,7 +57,7 @@ def flatten(items):
     return flat
 
 
-class TheCPANodeVisitor(NodeVisitor):
+class ConfigTamerNodeVisitor(NodeVisitor):
     def visit_config(self, node, visited_children):
         # each of visited_children is a >=0 list of
         # {key: "key", value: "value"} or
@@ -118,7 +118,7 @@ def parse(config_string):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         raise SyntaxError, "Invalid config file syntax: {}".format(exc_value), exc_traceback
 
-    visitor = TheCPANodeVisitor()
+    visitor = ConfigTamerNodeVisitor()
     parsed_config = visitor.visit(parsed_string)
 
     config = process_config(parsed_config)

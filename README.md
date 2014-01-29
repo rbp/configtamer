@@ -1,11 +1,11 @@
-thecpa - The ConfigParser Alternative
+configtamer - The ConfigParser Alternative
 ======================================
 
-#### Or: The Crimson Permanent Assurance!
+#### Little brown configgy things, with short stuffy assignments and great long sections. I don't know what all the fuss is about, I could tame one of those.
 
-thecpa is a configuration file format, and accompanying Python parser.
+configtamer is a configuration file format, and accompanying Python parser.
 
-thecpa is a powerful, flexible configuration file format. It's meant to be
+configtamer is a powerful, flexible configuration file format. It's meant to be
 straightforward to write and clear to read, allowing complex
 configurations but making the simple ones simple.
 
@@ -23,8 +23,8 @@ error_log: {logs_dir}/error.log
 And here is how it would be parsed:
 
 ```python
-    >>> import thecpa
-    >>> config = thecpa.parse("example.config")
+    >>> import configtamer
+    >>> config = configtamer.parse("example.config")
     >>> config.document_root
     '/var/www.htdocs'
     >>> config.error_log
@@ -57,7 +57,7 @@ development [default: production]:
 ```
 
 ```python
-    >>> config = thecpa.parse("example.config")
+    >>> config = configtamer.parse("example.config")
     >>> config.production.wsgi_dir
     '/var/src/some_project/app.wsgi'
     >>> config.development.wsgi_dir
@@ -68,7 +68,7 @@ development [default: production]:
 
 It's good to be able to apply some structure to the config file. But
 note that config.production.dbservers is returned as a string (as are
-all other values). You can tell thecpa that this was supposed to be a
+all other values). You can tell configtamer that this was supposed to be a
 list, and it will behave correctly (even allowing trailling commas and
 whitespace):
 
@@ -85,7 +85,7 @@ You can use `as_list` (and `as_int`, `as_bool` etc), but that can get
 tiresome. It also doesn't give the person writing the configuration
 a clue as to which type of value they whould use.
 
-For that, thecpa lets you use an annotated example as specs:
+For that, configtamer lets you use an annotated example as specs:
 
 ```
 production:
@@ -105,7 +105,7 @@ Given the specs above (which you can include in your software's
 documentation), here's how parsing would work:
 
 ```python
-    >>> parser = thecpa.parser("example.specs")
+    >>> parser = configtamer.parser("example.specs")
     >>> config = parser.parse("example.config")
     >>> config.production.wsgi_dir
     '/var/src/some_project/app.wsgi'
@@ -122,7 +122,7 @@ documentation), here's how parsing would work:
 A few things are worth noting, here: accessing
 `config.production.dbservers` directly already treats the value as a
 list. Also, had you noticed in the previous examples that
-`config.development.wsgi_dir` had a duplicated slash? thecpa now knows
+`config.development.wsgi_dir` had a duplicated slash? configtamer now knows
 that this is a path and fixes that. Finally,
 `config.development.instances` uses the default integer value set in
 the specs, even though it wasn't specified anywhere in the
@@ -149,10 +149,9 @@ Features
 FAQ
 ====
 
-## "thecpa"? What kind of name is that??
+## Do you have your own hat?
 
-I needed a name, I was looking for puns, Monty Python references and something I could get away with by cramming "CP" (for ConfigParser) in it...
-
+Of course! I got it at Harrods. And it lights up saying "Config Tamer" in great big neon letters.
 
 ## Why not... ?
 
