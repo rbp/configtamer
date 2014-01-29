@@ -76,8 +76,9 @@ class ConfigTamerNodeVisitor(NodeVisitor):
     def visit_assignment(self, node, visited_children):
         # After flattening, visited_children are one dict with "key"
         # and one with "value"
-        merged = dict(sum([c.items() for c in
-                           flatten(visited_children)], []))
+        items = [pair for d in flatten(visited_children)
+                  for pair in d.items()]
+        merged = dict(items)
         return merged
 
     def visit_section_header(self, node, visited_children):
@@ -116,7 +117,7 @@ def parse(config_string):
         parsed_string = grammar.parse(config_string)
     except parsimonious.exceptions.IncompleteParseError as exc:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        raise SyntaxError, "Invalid config file syntax: {}".format(exc_value), exc_traceback
+        raise SyntaxError("Invalid config file syntax: {}".format(exc_value))
 
     visitor = ConfigTamerNodeVisitor()
     parsed_config = visitor.visit(parsed_string)
@@ -148,11 +149,6 @@ def process_assignments(config):
         assignment = item
         key = assignment["key"]
         value = assignment["value"]
-
-        # FIXME: better way of detecting a section :)
-        if not isinstance(value, basestring):
-            items[key] = process_assignments(value)
-            continue
 
         if re_interpolation.search(value):
             to_interpolate[key] = value
