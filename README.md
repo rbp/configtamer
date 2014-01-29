@@ -1,5 +1,5 @@
-configtamer - The ConfigParser Alternative
-======================================
+configtamer - configuration file parsing under control
+======================================================
 
 #### Little brown configgy things, with short stuffy assignments and great long sections. I don't know what all the fuss is about, I could tame one of those.
 
