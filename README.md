@@ -1,9 +1,9 @@
-configtamer - configuration file parsing under control
+configtamer - config file parsing under control
 ======================================================
 
 #### Little brown configgy things, with short stuffy assignments and great long sections. I don't know what all the fuss is about, I could tame one of those.
 
-configtamer is a configuration file format, and accompanying Python parser.
+configtamer is a config file format, and accompanying Python parser.
 
 configtamer is a powerful, flexible configuration file format. It's meant to be
 straightforward to write and clear to read, allowing complex
@@ -11,7 +11,7 @@ configurations but making the simple ones simple.
 
 ### A simple example
 
-A configuration file can be as simple as a list of key/values:
+A config file can be as simple as a list of key/values:
 
 ```
 document_root: /var/www/htdocs
@@ -34,7 +34,7 @@ And here is how it would be parsed:
 
 ### A more interesting example
 
-You can also use sections in your configuration file, and tell one
+You can also use sections in your config file, and tell one
 section to fall back to another section's values:
 
 ```
