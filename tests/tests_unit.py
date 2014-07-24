@@ -5,6 +5,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import sys
+import traceback
+
 import unittest
 import configtamer
 
@@ -491,3 +494,16 @@ class TestFlatten(unittest.TestCase):
         assert configtamer.parser.flatten(['foo']) == ['foo']
     def test_list_of_list_of_single_element(self):
         assert configtamer.parser.flatten([['foo']]) == ['foo']
+
+
+class test_compat(unittest.TestCase):
+    def test_raise_(self):
+        from configtamer import compat
+        self.assertRaises(Exception, compat.raise_, Exception)
+        self.assertRaises(Exception, compat.raise_, Exception, "my hovercraft is full of eels!")
+
+        try:
+            [][0]
+        except IndexError as e:
+            _, _, tb = sys.exc_info()
+        self.assertRaises(Exception, compat.raise_, Exception, traceback=tb)

@@ -12,6 +12,7 @@ from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor
 
 from .config import Config
+from .compat import raise_
 
 
 grammar = Grammar(
@@ -117,7 +118,7 @@ def parse(config_string):
         parsed_string = grammar.parse(config_string)
     except parsimonious.exceptions.IncompleteParseError as exc:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        raise SyntaxError("Invalid config file syntax: {}".format(exc_value))
+        raise_(SyntaxError, "Invalid config file syntax: {}".format(exc_value), exc_traceback)
 
     visitor = ConfigTamerNodeVisitor()
     parsed_config = visitor.visit(parsed_string)
